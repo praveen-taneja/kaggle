@@ -15,9 +15,9 @@ import sklearn.cross_validation as cross_validation
 import sklearn.metrics as metrics
 import sklearn.grid_search as grid_search
 #%%
-gbc = ensemble.GradientBoostingClassifier(n_estimators=20, verbose = 1)
-pars = {'learning_rate': [0.01, 0.05, 0.1, 0.5, 1.0]}
-clf = grid_search.GridSearchCV(gbc, pars, cv = 5)
+gbc = ensemble.GradientBoostingClassifier(n_estimators=50, verbose = 1)
+pars = {'learning_rate': [0.01, 0.05, 0.1]}
+clf = grid_search.GridSearchCV(gbc, pars)
 #%%
 countries = pd.read_table('./data/countries.csv', delimiter = ',')
 age_gender = pd.read_table('./data/age_gender_bkts.csv', delimiter = ',')
@@ -120,9 +120,12 @@ X_train, X_train_test, y_train, y_train_test = cross_validation.train_test_split
                                 
 #%% fit and predict
 clf.fit(X_train, y_train)
+print 'fitting over'
+#%%
+print clf.best_params_
+#%%
 y_train_test_predicted = clf.predict(X_train_test)
 print 'accuracy =', metrics.accuracy_score(y_train_test, y_train_test_predicted)
-
 #%%
 #predictions['actual'].value_counts().plot(kind = 'bar', color = 'red')
 #predictions['predicted'].value_counts().plot(kind = 'bar', color = 'blue')
@@ -130,4 +133,4 @@ print 'accuracy =', metrics.accuracy_score(y_train_test, y_train_test_predicted)
 test_predicted = clf.predict(X_test.values)
 predictions = pd.DataFrame({'id':test_users['id'], 'country':test_predicted})
 predictions = predictions[['id', 'country']]
-predictions.to_csv('./data/predictions_01_12_16.csv', index = False)
+predictions.to_csv('./data/predictions_01_14_16.csv', index = False)
