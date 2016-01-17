@@ -14,7 +14,19 @@ import sklearn.ensemble as ensemble
 import sklearn.cross_validation as cross_validation
 import sklearn.metrics as metrics
 import sklearn.grid_search as grid_search
+import sklearn.preprocessing as preprocessing
+import os
+
+import os
+os.chdir("/Users/taneja/Copy/machine_learning/abb")
 #%%
+def ndcg(y, y_pred): # metrics.make_scorer(score_func)
+    # return accuracy score
+    pass
+    
+#%%
+#gbc = ensemble.GradientBoostingClassifier(n_estimators=50, verbose = 1)
+#pars = {'learning_rate': [0.01, 0.05, 0.1]}
 gbc = ensemble.GradientBoostingClassifier(n_estimators=50, verbose = 1)
 pars = {'learning_rate': [0.01, 0.05, 0.1]}
 clf = grid_search.GridSearchCV(gbc, pars)
@@ -114,6 +126,11 @@ X_train = train_test.iloc[:train_nrows, :]
 X_test = train_test.iloc[train_nrows:, :]
 
 #%% split training data into training and testing
+le = preprocessing.LabelEncoder()
+sorted_classes = np.sort(y_train.unique())
+print sorted_classes
+#y_train_encd = le.fit_transform(y_train.values)
+#%%
 X_train, X_train_test, y_train, y_train_test = cross_validation.train_test_split(
                                 X_train.values, y_train.values,test_size = 0.1,
                                 random_state=42)
@@ -122,7 +139,7 @@ X_train, X_train_test, y_train, y_train_test = cross_validation.train_test_split
 clf.fit(X_train, y_train)
 print 'fitting over'
 #%%
-print clf.best_params_
+print 'best learning rate =', clf.best_params_
 #%%
 y_train_test_predicted = clf.predict(X_train_test)
 print 'accuracy =', metrics.accuracy_score(y_train_test, y_train_test_predicted)
@@ -130,7 +147,38 @@ print 'accuracy =', metrics.accuracy_score(y_train_test, y_train_test_predicted)
 #predictions['actual'].value_counts().plot(kind = 'bar', color = 'red')
 #predictions['predicted'].value_counts().plot(kind = 'bar', color = 'blue')
 #%% make predictions on actual test data
-test_predicted = clf.predict(X_test.values)
-predictions = pd.DataFrame({'id':test_users['id'], 'country':test_predicted})
-predictions = predictions[['id', 'country']]
-predictions.to_csv('./data/predictions_01_14_16.csv', index = False)
+test_predicted = clf.predict_proba(X_test.values)
+test_predicted = pd.DataFrame(test_predicted, columns = sorted_classes)
+users_id = pd.DataFrame({'id':test_users['id']})
+predictions_wide = pd.concat([users_id, test_predicted], axis = 1)
+#%%
+predictions_wide_T = predictions_wide.transpose()
+#col = predictions_wide_T[0]
+#col_srt = col.sort_values(ascending = False)
+#print col_srt.index.values[1:6]
+#print col['id']
+#d = {'id':[], 'country':[]}
+#%%
+ids = []
+countries = []
+for col in predictions_wide_T:
+    col = predictions_wide_T[col]
+    #print col
+    ids.extend([col['id']]*5)
+    col_srt = col.sort_values(ascending = False)
+    countries.extend(col_srt.index.values[1:6])
+
+predictions_out = pd.DataFrame({'id': ids, 'country' : countries})
+predictions_out = predictions_out[['id', 'country']]
+predictions_out.to_csv('./data/predictions_01_17_16.csv', index = False)
+
+#    col.order()
+#for ix, row in predictions_wide.iterrow():
+#    user_id = row[0]
+#    countries = row[1:]
+    
+#%%
+
+#predictions = pd.DataFrame({'id':test_users['id'], 'country':test_predicted})
+#predictions = predictions[['id', 'country']]
+#predictions.to_csv('./data/predictions_01_14_16.csv', index = False)
