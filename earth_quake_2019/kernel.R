@@ -9,6 +9,7 @@ library(dygraphs)
 library(magrittr)
 library(caret)
 library(xgboost)
+library(e1071)
 
 # parameters
 trainData <- '../input/train.csv'
@@ -30,6 +31,7 @@ trainFeaturesDT <- trainDT[, list('avg' = mean(acoustic_data, na.rm = TRUE)
                                   , 'min' = min(acoustic_data, na.rm = TRUE)
                                   , 'max' = max(acoustic_data, na.rm = TRUE)
                                   , 'sd' = sd(acoustic_data, na.rm = TRUE)
+                                  , 'kurtosis' = e1071::kurtosis(acoustic_data, na.rm = TRUE)
                                   , 'time_to_failure' = tail(time_to_failure,1)
 ), by = 'epochId']
 
@@ -51,7 +53,7 @@ xgb.trControl <- caret::trainControl(
   #, classProbs = TRUE
 )
 
-xgb.grid <- expand.grid(nrounds = 30
+xgb.grid <- expand.grid(nrounds = 100
                         , eta = c(0.1)
                         , gamma = c(1)
                         , max_depth = c(3)
@@ -73,7 +75,7 @@ preds <- predict(xgb_fit, newdata = x.train)
 
 DT <- data.table('observed' = y.train, 'predicted' = preds)
 
-ggplot(DT, aes(x = observed, y = predicted)) + geom_point() + coord_cartesian(xlim = c(0,15), ylim = c(0, 15))
+ggplot(DT, aes(x = observed, y = predicted)) + geom_point() + coord_cartesian(xlim = c(0,15), ylim = c(0, 15)) + geom_abline(color = 'red')
 
 # kaggle submission
 submissionDT <- fread(sampleSubmission, colClasses = c("character", "double"))
@@ -86,6 +88,7 @@ for(theSegId in submissionDT$seg_id){
                           , 'min' = min(acoustic_data, na.rm = TRUE)
                           , 'max' = max(acoustic_data, na.rm = TRUE)
                           , 'sd' = sd(acoustic_data, na.rm = TRUE)
+                          , 'kurtosis' = e1071::kurtosis(acoustic_data, na.rm = TRUE)
   )
   ]
   preds <- predict(xgb_fit, newdata = x.test)
